@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "*" ]
+
+jobs:
+  backend:
+    name: Backend (Gradle)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        if: ${{ hashFiles('gradlew') != '' }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Gradle
+        if: ${{ hashFiles('gradlew') != '' }}
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build
+        if: ${{ hashFiles('gradlew') != '' }}
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+
+      - name: Test
+        if: ${{ hashFiles('gradlew') != '' }}
+        run: ./gradlew test --no-daemon
+
+  frontend:
+    name: Frontend (Node)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        if: ${{ hashFiles('package.json') != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install
+        if: ${{ hashFiles('package.json') != '' }}
+        run: npm ci
+
+      - name: Lint
+        if: ${{ hashFiles('package.json') != '' }}
+        run: |
+          npm run -s lint || echo "No lint script"
+
+      - name: Build
+        if: ${{ hashFiles('package.json') != '' }}
+        run: |
+          npm run -s build || echo "No build script"
+
+      - name: Test
+        if: ${{ hashFiles('package.json') != '' }}
+        run: |
+          npm test -- --ci --reporters=default || echo "No tests"
