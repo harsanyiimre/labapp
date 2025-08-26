@@ -1,0 +1,2 @@
+# labapp
+Labor applikáció
